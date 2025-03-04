@@ -1,8 +1,8 @@
 {
-  "domain": "extended_openai_conversation",
-  "name": "Extended OpenAI Conversation",
+  "domain": "extended_googleai_conversation",
+  "name": "Extended Google AI Conversation",
   "codeowners": [
-    "@jekalmin"
+    "@tianzhihe"
   ],
   "config_flow": true,
   "dependencies": [
