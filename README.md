@@ -1,4 +1,4 @@
-# Extended OpenAI Conversation
+# Extended GoogleAI Conversation
 This is custom component of Home Assistant.
 
 Derived from [OpenAI Conversation](https://www.home-assistant.io/integrations/openai_conversation/) with some new features such as call-service.
