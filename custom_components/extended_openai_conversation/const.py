@@ -1,6 +1,6 @@
-"""Constants for the Extended OpenAI Conversation integration."""
+"""Constants for the Extended Google AI Conversation integration."""
 
-DOMAIN = "extended_openai_conversation"
+DOMAIN = "extended_googleai_conversation"
 DEFAULT_NAME = "Extended OpenAI Conversation"
 CONF_ORGANIZATION = "organization"
 CONF_BASE_URL = "base_url"
