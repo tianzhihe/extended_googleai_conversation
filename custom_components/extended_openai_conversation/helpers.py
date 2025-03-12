@@ -187,7 +187,8 @@ def _get_rest_data(hass, rest_config, arguments):
     # Create and return a RestData instance based on the configuration.
     return rest.create_rest_data_from_config(hass, rest_config)
 
-
+# Validates the provided OpenAI or Azure OpenAI credentials by attempting to list available models.
+# If skip_authentication is True, the check is bypassed.
 async def validate_authentication(
     hass: HomeAssistant,
     api_key: str,
