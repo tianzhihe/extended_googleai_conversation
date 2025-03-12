@@ -1,19 +1,55 @@
+
+# The built-in 'abc' module provides infrastructure for
+# defining abstract base classes (ABC) and methods (abstractmethod).
 from abc import ABC, abstractmethod
+
+# 'timedelta' is used for date/time manipulations.
 from datetime import timedelta
+
+# 'partial' allows partial application of functions, capturing some arguments beforehand.
 from functools import partial
+
+# 'logging' is for creating log messages in different severity levels.
 import logging
+
+# 'os' allows interaction with the operating system, such as file paths.
 import os
+
+# 're' provides regular expression matching.
 import re
+
+# 'sqlite3' is the built-in database interface for SQLite in Python.
 import sqlite3
+
+# 'time' offers time-related functions, such as getting the current time in seconds.
 import time
+
+# 'typing' offers type hints like 'Any' to annotate variable/argument types.
 from typing import Any
+
+# 'parse' from urllib is used to handle URL parsing operations.
 from urllib import parse
 
+# 'BeautifulSoup' from bs4 is used to parse HTML and XML documents.
 from bs4 import BeautifulSoup
+
+# The 'openai' package provides functionalities to interact with OpenAI services.
+# Here we import asynchronous classes for Azure OpenAI and OpenAI usage.
 from openai import AsyncAzureOpenAI, AsyncOpenAI
+
+# 'voluptuous' (vol) is a Python data validation library used to define schemas and validate data.
 import voluptuous as vol
+
+# 'yaml' helps in reading and writing YAML files.
 import yaml
 
+# These imports are from the Home Assistant framework:
+#   - automation: for handling automations
+#   - conversation: for managing conversation-based features
+#   - energy: for energy management
+#   - recorder: for recording state changes
+#   - rest: for REST-based functionalities
+#   - scrape: for scraping web pages
 from homeassistant.components import (
     automation,
     conversation,
@@ -22,9 +58,17 @@ from homeassistant.components import (
     rest,
     scrape,
 )
+
+# '_async_validate_config_item' is used internally by Home Assistant to validate automation configuration entries.
 from homeassistant.components.automation.config import _async_validate_config_item
+
+# 'SCRIPT_ENTITY_SCHEMA' outlines the allowed structure of script entities.
 from homeassistant.components.script.config import SCRIPT_ENTITY_SCHEMA
+
+# 'AUTOMATION_CONFIG_PATH' is the file path where Home Assistant stores automations.
 from homeassistant.config import AUTOMATION_CONFIG_PATH
+
+# Various constants from Home Assistant.
 from homeassistant.const import (
     CONF_ATTRIBUTE,
     CONF_METHOD,
@@ -37,14 +81,25 @@ from homeassistant.const import (
     CONF_VERIFY_SSL,
     SERVICE_RELOAD,
 )
+
+# Core functionalities and classes from Home Assistant:
+#   - HomeAssistant: the main class representing the instance
+#   - State: used to handle entity state
 from homeassistant.core import HomeAssistant, State
+
+# Custom exception classes that Home Assistant defines for specific error handling.
 from homeassistant.exceptions import HomeAssistantError, ServiceNotFound
+
+# Helpers for data validation, HTTP client usage, and scripting within Home Assistant.
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.script import Script
 from homeassistant.helpers.template import Template
+
+# 'dt_util' provides date/time utilities that integrate with Home Assistant's time zones.
 import homeassistant.util.dt as dt_util
 
+# These constants and exceptions are specific to the custom integration or module:
 from .const import CONF_PAYLOAD_TEMPLATE, DOMAIN, EVENT_AUTOMATION_REGISTERED
 from .exceptions import (
     CallServiceError,
@@ -55,25 +110,28 @@ from .exceptions import (
     NativeNotFound,
 )
 
+# Prepare a logger instance for this module.
 _LOGGER = logging.getLogger(__name__)
 
-
+# Regular expression pattern used to detect Azure domain in a URL.
 AZURE_DOMAIN_PATTERN = r"\.(openai\.azure\.com|azure-api\.net)"
 
-
+# The following function retrieves a function executor from a predefined dictionary.
+# If the requested function type does not exist, it raises a 'FunctionNotFound' error.
 def get_function_executor(value: str):
     function_executor = FUNCTION_EXECUTORS.get(value)
     if function_executor is None:
         raise FunctionNotFound(value)
     return function_executor
 
-
+# Checks if the provided base_url matches the Azure domain pattern above.
 def is_azure(base_url: str):
     if base_url and re.search(AZURE_DOMAIN_PATTERN, base_url):
         return True
     return False
 
-
+# Converts certain keys in a dictionary or list structure into Home Assistant Templates,
+# if they match certain template key names. Useful for dynamically rendering fields.
 def convert_to_template(
     settings,
     template_keys=["data", "event_data", "target", "service"],
@@ -81,7 +139,7 @@ def convert_to_template(
 ):
     _convert_to_template(settings, template_keys, hass, [])
 
-
+# Helper function to recursively convert items to Template objects if they match the criteria.
 def _convert_to_template(settings, template_keys, hass, parents: list[str]):
     if isinstance(settings, dict):
         for key, value in settings.items():
@@ -102,13 +160,15 @@ def _convert_to_template(settings, template_keys, hass, parents: list[str]):
         for setting in settings:
             _convert_to_template(setting, template_keys, hass, parents)
 
-
+# Prepares and returns REST data by applying templates and merging them back into the configuration.
 def _get_rest_data(hass, rest_config, arguments):
+    # Default values for REST configuration if not specified.
     rest_config.setdefault(CONF_METHOD, rest.const.DEFAULT_METHOD)
     rest_config.setdefault(CONF_VERIFY_SSL, rest.const.DEFAULT_VERIFY_SSL)
     rest_config.setdefault(CONF_TIMEOUT, rest.data.DEFAULT_TIMEOUT)
     rest_config.setdefault(rest.const.CONF_ENCODING, rest.const.DEFAULT_ENCODING)
 
+    # If a resource_template is present, render it and store it as 'CONF_RESOURCE'.
     resource_template: Template | None = rest_config.get(CONF_RESOURCE_TEMPLATE)
     if resource_template is not None:
         rest_config.pop(CONF_RESOURCE_TEMPLATE)
@@ -116,6 +176,7 @@ def _get_rest_data(hass, rest_config, arguments):
             arguments, parse_result=False
         )
 
+    # If a payload_template is present, render it and store it as 'CONF_PAYLOAD'.
     payload_template: Template | None = rest_config.get(CONF_PAYLOAD_TEMPLATE)
     if payload_template is not None:
         rest_config.pop(CONF_PAYLOAD_TEMPLATE)
@@ -123,6 +184,7 @@ def _get_rest_data(hass, rest_config, arguments):
             arguments, parse_result=False
         )
 
+    # Create and return a RestData instance based on the configuration.
     return rest.create_rest_data_from_config(hass, rest_config)
 
 
