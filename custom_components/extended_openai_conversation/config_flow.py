@@ -13,6 +13,10 @@ import yaml
 from homeassistant import config_entries
 from homeassistant.const import CONF_API_KEY, CONF_NAME
 from homeassistant.core import HomeAssistant
+
+# Imports Home Assistant classes, constants, and helper methods. 
+# config_entries is needed for building config flows; 
+# selectors are user interface widgets that help create forms in the Home Assistant UI.
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
     BooleanSelector,
@@ -24,6 +28,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
     TemplateSelector,
 )
+
 
 from .const import (
     CONF_API_VERSION,
@@ -60,8 +65,11 @@ from .const import (
 )
 from .helpers import validate_authentication
 
+# Creates a logger for outputting log messages under the current module name.
 _LOGGER = logging.getLogger(__name__)
 
+# Defines a schema for the initial form displayed to users. 
+# This includes fields such as API key, an optional name, base_url, etc.
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_NAME): str,
@@ -75,8 +83,10 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     }
 )
 
+# Dumps a default functions structure (from Python to YAML) so it can be used in the form as the default value.
 DEFAULT_CONF_FUNCTIONS_STR = yaml.dump(DEFAULT_CONF_FUNCTIONS, sort_keys=False)
 
+# Defines a read-only dictionary (using MappingProxyType) that holds default option values for prompts, models, function calls, and so forth.
 DEFAULT_OPTIONS = types.MappingProxyType(
     {
         CONF_PROMPT: DEFAULT_PROMPT,
@@ -123,6 +133,8 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> None:
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for OpenAI Conversation."""
 
+    # The version of this config flow’s schema. 
+    # If the schema changes in the future, this can be incremented to handle migrations.
     VERSION = 1
 
     async def async_step_user(
@@ -146,14 +158,18 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
         else:
+            # If validation is successful, it creates a new config entry with the user’s input. 
+            # This means the integration is set up in Home Assistant.
             return self.async_create_entry(
                 title=user_input.get(CONF_NAME, DEFAULT_NAME), data=user_input
             )
 
+        # If there were errors, it redisplays the form, populating an error message.
         return self.async_show_form(
             step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
         )
 
+    # Tells Home Assistant how to set up an options flow for users who want to modify options after the initial setup.
     @staticmethod
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
@@ -161,14 +177,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Create the options flow."""
         return OptionsFlow(config_entry)
 
-
+# A custom class for presenting a separate form that configures advanced options.
 class OptionsFlow(config_entries.OptionsFlow):
     """OpenAI config flow options handler."""
 
+    # Stores the current config entry so the options flow knows the existing configuration.
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
         self.config_entry = config_entry
 
+    # The primary method for this options flow. 
+    # If the user has provided new input, create or update the entry. Otherwise, show the form.
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
@@ -177,12 +196,15 @@ class OptionsFlow(config_entries.OptionsFlow):
             return self.async_create_entry(
                 title=user_input.get(CONF_NAME, DEFAULT_NAME), data=user_input
             )
+        # If no data has been submitted yet, the code generates a schema for the form (`openai_config_option_schema`) and shows it.
         schema = self.openai_config_option_schema(self.config_entry.options)
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(schema),
         )
 
+    # A helper method that builds a schema dictionary for the options form. 
+    # If there are no existing options, it falls back to `DEFAULT_OPTIONS`.
     def openai_config_option_schema(self, options: MappingProxyType[str, Any]) -> dict:
         """Return a schema for OpenAI completion options."""
         if not options:
@@ -251,6 +273,8 @@ class OptionsFlow(config_entries.OptionsFlow):
                 },
                 default=DEFAULT_CONTEXT_TRUNCATE_STRATEGY,
             ): SelectSelector(
+                # A select dropdown (`SelectSelector`) for the context truncation strategy. 
+                # The possible choices are taken from `CONTEXT_TRUNCATE_STRATEGIES`.
                 SelectSelectorConfig(
                     options=[
                         SelectOptionDict(value=strategy["key"], label=strategy["label"])
